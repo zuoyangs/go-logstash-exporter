@@ -1,0 +1,7 @@
+endpoints:
+  - http://localhost:9600
+  - http://logstash-02:9600
+  - http://logstash-03:9600 
+
+web:
+  listen_address: ":8080"
