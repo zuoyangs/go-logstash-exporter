@@ -47,10 +47,10 @@ func NewNodeInfoCollector(logstashEndpoint string, instance string) (Collector, 
 	}, nil
 }
 
-// Collect 收集节点信息指标
+// Collect 入口方法，负责错误处理和调用分发；
 func (c *NodeInfoCollector) Collect(ch chan<- prometheus.Metric) error {
 	if _, err := c.collect(ch); err != nil {
-		Errorf("Failed collecting info metrics: %v", err)
+		Errorf("Failed collecting node info metrics: %v", err)
 		return err
 	}
 	return nil

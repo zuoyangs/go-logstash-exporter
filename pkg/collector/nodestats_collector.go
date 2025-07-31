@@ -294,10 +294,10 @@ func NewNodeStatsCollector(logstashEndpoint string, instance string) (Collector,
 	}, nil
 }
 
-// Collect 收集节点统计信息指标
+// Collect 入口方法，负责错误处理和调用分发；
 func (c *NodeStatsCollector) Collect(ch chan<- prometheus.Metric) error {
 	if _, err := c.collect(ch); err != nil {
-		Errorf("Failed collecting node metrics: %v", err)
+		Errorf("Failed collecting node stats metrics: %v", err)
 		return err
 	}
 	return nil
@@ -533,13 +533,8 @@ func (c *NodeStatsCollector) collect(ch chan<- prometheus.Metric) (*prometheus.D
 		c.instance,
 	)
 
-	// For backwards compatibility with Logstash 5
-	pipelines := make(map[string]Pipeline)
-	if len(stats.Pipelines) == 0 {
-		pipelines["main"] = stats.Pipeline
-	} else {
-		pipelines = stats.Pipelines
-	}
+	// 直接使用 Pipelines，不再支持 Logstash 5.x
+	pipelines := stats.Pipelines
 
 	for pipelineID, pipeline := range pipelines {
 		ch <- prometheus.MustNewConstMetric(
@@ -576,11 +571,11 @@ func (c *NodeStatsCollector) collect(ch chan<- prometheus.Metric) (*prometheus.D
 
 		// 收集 Input 插件指标
 		for _, plugin := range pipeline.Plugins.Inputs {
-			// 输入事件计数
+			// 输入事件计数 (适配 Logstash 7.5.0: 使用 Out 而不是 In)
 			ch <- prometheus.MustNewConstMetric(
 				c.PipelinePluginEventsIn,
 				prometheus.CounterValue,
-				float64(plugin.Events.In),
+				float64(plugin.Events.Out),
 				pipelineID,
 				plugin.Name,
 				plugin.ID,
@@ -689,7 +684,7 @@ func (c *NodeStatsCollector) collect(ch chan<- prometheus.Metric) (*prometheus.D
 			ch <- prometheus.MustNewConstMetric(
 				c.PipelineQueueEvents,
 				prometheus.CounterValue,
-				float64(pipeline.Queue.Events),
+				float64(pipeline.Queue.EventsCount),
 				pipelineID,
 				c.instance,
 			)
@@ -697,7 +692,7 @@ func (c *NodeStatsCollector) collect(ch chan<- prometheus.Metric) (*prometheus.D
 			ch <- prometheus.MustNewConstMetric(
 				c.PipelineQueuePageCapacity,
 				prometheus.CounterValue,
-				float64(pipeline.Queue.Capacity.PageCapacityInBytes),
+				float64(pipeline.Queue.QueueSizeInBytes),
 				pipelineID,
 				c.instance,
 			)
@@ -705,29 +700,12 @@ func (c *NodeStatsCollector) collect(ch chan<- prometheus.Metric) (*prometheus.D
 			ch <- prometheus.MustNewConstMetric(
 				c.PipelineQueueMaxQueueSize,
 				prometheus.CounterValue,
-				float64(pipeline.Queue.Capacity.MaxQueueSizeInBytes),
-				pipelineID,
-				c.instance,
-			)
-
-			ch <- prometheus.MustNewConstMetric(
-				c.PipelineQueueMaxUnreadEvents,
-				prometheus.CounterValue,
-				float64(pipeline.Queue.Capacity.MaxUnreadEvents),
+				float64(pipeline.Queue.MaxQueueSizeInBytes),
 				pipelineID,
 				c.instance,
 			)
 		}
 
-		if pipeline.DeadLetterQueue.QueueSizeInBytes != 0 {
-			ch <- prometheus.MustNewConstMetric(
-				c.PipelineDeadLetterQueueSizeInBytes,
-				prometheus.GaugeValue,
-				float64(pipeline.DeadLetterQueue.QueueSizeInBytes),
-				pipelineID,
-				c.instance,
-			)
-		}
 	}
 
 	return nil, nil

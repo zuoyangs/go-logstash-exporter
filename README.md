@@ -7,7 +7,7 @@ Prometheus exporter for Logstash metrics.
 - 支持多个 Logstash 实例监控
 - 支持配置文件方式配置
 - 提供丰富的监控指标（JVM、进程、Pipeline 等）
-- 支持 Logstash 5.x 和 6.x+ 版本
+- 支持 Logstash 7.x+ 版本（已验证支持 7.5.0）
 
 ## 程序架构
 
