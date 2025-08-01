@@ -1,4 +1,4 @@
-FROM harbor.mcdchina.net/infra/golang:1.24.5-alpine3.22 AS build
+FROM registry.cn-hangzhou.aliyuncs.com/zuoyang/golang:1.24.5-alpine3.22 AS build
 
 WORKDIR /app
 
@@ -15,7 +15,7 @@ COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux go build -a -o go-logstash-exporter .
 
-FROM harbor.mcdchina.net/infra/alpine:3.22 AS release
+FROM registry.cn-hangzhou.aliyuncs.com/zuoyang/alpine:3.22 AS release
 
 RUN apk --no-cache add ca-certificates tzdata
 
